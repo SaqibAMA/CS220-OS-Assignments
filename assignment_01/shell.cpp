@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
 using namespace std;
 
@@ -300,57 +301,41 @@ public:
   // Core execution function
   bool execute() {
 
-    // If there is only single command
-    if (c.size() == 1) {
-      c[0].execute();
-    }
-
-    // If more than one command
-
-    int id[2];
-
-    pipe (id);
-
-    const int READ = id[0];
-    const int WRITE = id[1];
-
-    char consoleBuffer[1000] = { 0 };
-
-    unsigned int commandNumber = 0;
-
-    command& cc = c[commandNumber];   // current command
-
-    // argv.size() for arguments. +1 for name +1 for NULL
-    char* argv_list[cc.argv.size() + 1 + 1];
-
-    // copying name
-    argv_list[0] = new char[cc.name.length()];
-    strcpy(argv_list[0], cc.name.c_str());
-
-
-    // copying args
-    for (int i = 1; i < cc.argv.size() + 1; i++) {
-
-      argv_list[i] = new char[cc.argv[i - 1].length()];
-      strcpy(argv_list[i], cc.argv[i - 1].c_str());
-
-    }
-
-    // marking end
-    argv_list[cc.argv.size() + 1] = NULL;
-
-
-    execlp(cc.getName().c_str(), *argv_list, NULL);
-
-
-
-
 
     return true;
 
 
   }
 
+
+  // arguments parsing function
+  char** parseArguments(const command& cmd) {
+
+    // argv.size() for arguments. +1 for name +1 for NULL
+    char** argv_list = new char*[cmd.argv.size() + 2];
+
+
+    // copying name
+    argv_list[0] = new char[cmd.name.length()];
+    strcpy(argv_list[0], cmd.name.c_str());
+
+
+    // copying args
+    for (int i = 1; i < cmd.argv.size() + 1; i++) {
+
+      argv_list[i] = new char[cmd.argv[i - 1].length()];
+      strcpy(argv_list[i], cmd.argv[i - 1].c_str());
+
+    }
+
+    // marking end
+    argv_list[cmd.argv.size() + 1] = NULL;
+
+
+    // returning args
+    return argv_list;
+
+  }
 
   // Destructor
   ~command_ext() {
@@ -361,9 +346,13 @@ public:
 
 int main() {
 
-  command_ext cmd;
-  cin >> cmd;
-  cmd.execute();
+
+  while (true) {
+    command_ext cmd;
+    cin >> cmd;
+    cmd.execute();
+  }
+
 
   return 0;
 

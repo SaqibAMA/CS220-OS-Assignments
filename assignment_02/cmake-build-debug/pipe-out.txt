@@ -1,0 +1,11 @@
+.
+..
+assignment_02
+assignment_02.cbp
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+deb.txt
+domains.txt
+Makefile
+Testing

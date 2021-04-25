@@ -1,0 +1,3 @@
+/media/saqib/32B22818B227DF5B/FAST/Semester 04/Operating Sytems/Assignments/assignment_02/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/media/saqib/32B22818B227DF5B/FAST/Semester 04/Operating Sytems/Assignments/assignment_02/cmake-build-debug/CMakeFiles/edit_cache.dir
+/media/saqib/32B22818B227DF5B/FAST/Semester 04/Operating Sytems/Assignments/assignment_02/cmake-build-debug/CMakeFiles/assignment_02.dir

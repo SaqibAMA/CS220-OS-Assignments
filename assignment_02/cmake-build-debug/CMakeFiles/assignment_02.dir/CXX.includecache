@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/media/saqib/32B22818B227DF5B/FAST/Semester 04/Operating Sytems/Assignments/assignment_02/main.cpp
+iostream
+-
+string
+-
+cstring
+-
+vector
+-
+unistd.h
+-
+stdlib.h
+-
+sys/wait.h
+-
+fcntl.h
+-
+
