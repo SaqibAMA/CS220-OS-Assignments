@@ -326,173 +326,63 @@ public:
     // Core execution function
     bool execute() {
 
+        if (c.size() == 1 && !c[0].isRedirected()) {
+            return c[0].execute();
+        }
 
-        // Handling single commands
-        if (c.size() == 1) {
 
-            if (c[0].isRedirected()) {
+        int in[2];
+        int out[2];
 
-                // handling single redirected command
-                return executeSingleDirected(c[0]);
+        pipe(in);
+        pipe(out);
 
-            }
-            else {
 
-                // dealing with simple commands with built-in execution
-                return c[0].execute();
+        if (fork() == 0) {
 
-            }
+            dup2(in[1], 1);
+            dup2(out[0], 0);
+            close(in[0]);
+            close(in[1]);
+            close(out[0]);
+            close(out[1]);
+            c[0].execute();
+
+            exit(0);
 
         }
 
-        // handling multiple commands
+        int status;
+        wait(&status);
+        close(in[1]);
 
-        unsigned int commandNumber = 0;
+        if (fork() == 0) {
 
+            dup2(out[1], 1);
+            dup2(in[0], 0);
+            close(in[0]);
+            close(in[1]);
+            close(out[0]);
+            close(out[1]);
+
+            c[1].execute();
+
+            exit(0);
+
+        }
+
+        wait(&status);
+        close(in[1]);
+        close(in[0]);
+        close(out[1]);
         char consoleBuffer[1000] = {0};
+        read(out[0], consoleBuffer, 1000);
+        close(out[0]);
 
-        for (commandNumber = 0; commandNumber < c.size(); commandNumber++) {
-
-            if (commandNumber == 0) {
-
-                string currentCommand = c[commandNumber].getOriginalCommand();
-                currentCommand += " > pipe-1-out.txt";
-
-                command cc;
-                cc.parseCommand(currentCommand.c_str());
-
-                executeSingleDirected(cc);
-
-            }
-            else if (commandNumber > 0 && commandNumber < c.size() - 1) {
-
-
-                {
-                    string currentCommand = c[commandNumber].getOriginalCommand();
-                    currentCommand += " < pipe-out.txt";
-
-                    command cc;
-                    cc.parseCommand(currentCommand.c_str());
-
-                    executeSingleDirected(cc);
-                }
-
-                {
-
-                }
-
-            }
-
-        }
+        cout << consoleBuffer << endl;
 
 
         return true;
-    }
-
-    // executing single directed commands
-    bool executeSingleDirected(const command& cmd) {
-
-        // flags
-        bool in = false;
-        bool out = false;
-
-        // determining the direction
-        for (auto x : cmd.argv) {
-
-            if (strcmp(x.c_str(), ">") == 0)
-                out = true;
-            else if (strcmp(x.c_str(), "<") == 0)
-                in = true;
-
-        }
-
-        pair<command, string> dividedCommand = splitCommand(cmd);
-
-        if (out) {
-
-            int pipe = open(dividedCommand.second.c_str(), O_CREAT | O_WRONLY | O_TRUNC);
-
-            if (fork() == 0) {
-
-                dup2(pipe, 1);
-                char** argv_list = parseArguments(dividedCommand.first);
-
-                if (execvp(argv_list[0], argv_list) < 0)
-                    cout << "Error: Can't execute" << endl;
-
-            }
-            else {
-
-                wait(NULL);
-                close(pipe);
-
-            }
-
-
-        }
-        else if (in) {
-
-            int pipe = open(dividedCommand.second.c_str(), O_RDONLY);
-            int pipe_out = open("pipe-out.txt", O_WRONLY | O_CREAT | O_TRUNC);
-
-            if (fork() == 0) {
-
-                dup2(pipe, 0);
-                dup2(pipe_out, 1);
-                char** argv_list = parseArguments(dividedCommand.first);
-
-                if (execvp(argv_list[0], argv_list) < 0)
-                    cout << "Error: Can't execute" << endl;
-
-            }
-            else {
-
-                wait(NULL);
-                close(pipe);
-                close(pipe_out);
-
-            }
-
-
-        }
-
-        return true;
-
-    }
-
-    // split directed commands
-    pair<command, string> splitCommand(const command& cmd) {
-
-
-        pair<command, string> out;
-
-        string firstPart = cmd.name;
-        string filename;
-
-        {
-            int i = 0;
-            while (cmd.argv[i] != ">" && cmd.argv[i] != "<"){
-                firstPart += " ";
-                firstPart += cmd.argv[i];
-                ++i;
-            }
-
-            ++i;
-
-            filename = cmd.argv[i];
-
-        }
-
-
-        command c;
-        c.parseCommand(firstPart.c_str());
-
-        out.first = c;
-        out.second = filename;
-
-
-
-        return out;
 
     }
 
@@ -542,6 +432,7 @@ int main() {
         cin >> cmd;
         cmd.execute();
     }
+
 
 
 
