@@ -330,6 +330,7 @@ public:
             return c[0].execute();
         }
 
+        unsigned int commandNumber = 0;
 
         int in[2];
         int out[2];
@@ -337,50 +338,99 @@ public:
         pipe(in);
         pipe(out);
 
-
-        if (fork() == 0) {
-
-            dup2(in[1], 1);
-            dup2(out[0], 0);
-            close(in[0]);
-            close(in[1]);
-            close(out[0]);
-            close(out[1]);
-            c[0].execute();
-
-            exit(0);
-
-        }
-
-        int status;
-        wait(&status);
-        close(in[1]);
-
-        if (fork() == 0) {
-
-            dup2(out[1], 1);
-            dup2(in[0], 0);
-            close(in[0]);
-            close(in[1]);
-            close(out[0]);
-            close(out[1]);
-
-            c[1].execute();
-
-            exit(0);
-
-        }
-
-        wait(&status);
-        close(in[1]);
-        close(in[0]);
-        close(out[1]);
         char consoleBuffer[1000] = {0};
+
+        if (fork() == 0) {
+
+            // IO
+            dup2(in[0], 0);
+            dup2(out[1], 1);
+
+            // Execution
+            c[commandNumber].execute();
+
+            exit(0);
+
+        }
+
+        int processOneStatus = -1;
+        wait(&processOneStatus);
+
+        if (processOneStatus != 0) cout << "Something went wrong!" << endl;
+
+
+        close(in[0]);
+        close(in[1]);
+        close(out[1]);
         read(out[0], consoleBuffer, 1000);
         close(out[0]);
 
-        cout << consoleBuffer << endl;
+        return executeWithInput(consoleBuffer, commandNumber + 1);
 
+    }
+
+    // execute function with input
+    bool executeWithInput(char* consoleBuffer, unsigned int commandNumber) {
+
+        if (commandNumber >= c.size()) {
+
+            cout << consoleBuffer << endl;
+            return true;
+
+        }
+
+        int in[2];
+        int out[2];
+
+        pipe(in);
+        pipe(out);
+
+        if (fork() == 0) {
+
+            close(in[0]);
+            int bytesWritten = write(in[1], consoleBuffer, strlen(consoleBuffer) + 1);
+            close(in[1]);
+
+            exit(0);
+
+        }
+
+        int inPipeWriteStatus = -1;
+        wait(&inPipeWriteStatus);
+
+        close(in[1]);
+
+
+        if (fork() == 0) {
+
+            dup2(out[1], 0);
+            dup2(in[0], 0);
+
+            close(out[0]);
+            close(in[1]);
+
+            c[commandNumber].execute();
+
+            close(out[1]);
+            close(in[0]);
+
+            exit(0);
+
+        }
+
+        int processExecutionStatus = -1;
+        wait(&processExecutionStatus);
+
+
+        char temporaryBuffer[1000] = {0};
+
+        close(out[1]);
+        read(out[0], temporaryBuffer, 1000);
+//        cout << temporaryBuffer << endl;
+        close(out[0]);
+
+
+        return (temporaryBuffer, commandNumber + 1);
 
         return true;
 
