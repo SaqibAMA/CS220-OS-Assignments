@@ -17,10 +17,12 @@ vector
 -
 unistd.h
 -
-stdlib.h
+cstdlib
 -
 sys/wait.h
 -
 fcntl.h
+-
+fstream
 -
 
