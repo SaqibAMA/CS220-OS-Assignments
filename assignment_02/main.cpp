@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <fstream>
+#include <semaphore.h>
 
 using namespace std;
 
@@ -269,7 +270,7 @@ public:
 
             char consoleBuffer[1000] = {0};
             read(outPipe[0], consoleBuffer, 1000);
-
+            cleanInput(consoleBuffer);
             close(outPipe[0]);
 
             if (fileReadStatus == -1) cout << "Something went wrong while reading from file!" << endl;
@@ -380,13 +381,50 @@ public:
     }
 
 
-    // pathname function
-//    string getBinPath() const {
-//
-//        string pname = "/bin/" + name;
-//        return pname;
-//
-//    }
+    // Helper
+    void cleanInput(char* consoleBuffer) {
+
+        /*
+         * There were some issues when reading the input from the pipe
+         * into a char array. This is the clean input function that takes that
+         * char array and removes null characters from between the text.
+         *
+         *
+         * Saqi0b\000 => Saqib\000
+         *
+         * */
+
+        if (!consoleBuffer && strlen(consoleBuffer) == 0) return;
+
+        bool startCleaning = false;
+        const int bSize = 1000;
+
+        for (int i = bSize; i >= 0; i--) {
+
+            // We have to start cleaning from this point onwards
+            if (consoleBuffer[i])
+                startCleaning = true;
+
+            // If we are in between the text
+            if (startCleaning) {
+
+                if (!consoleBuffer[i]) {
+
+                    // Shift the array one character left
+                    int j = i;
+                    while (j < bSize - 1) {
+                        consoleBuffer[j] = consoleBuffer[j + 1];
+                        j++;
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
 
     // Checking redirection
     bool isRedirected() const {
@@ -545,8 +583,10 @@ public:
     // execute function with input
     bool executeWithInput(char* consoleBuffer, unsigned int commandNumber) {
 
+
         // Remove nulls from between
         cleanInput(consoleBuffer);
+
 
         // If we have reached the end
         if (commandNumber >= c.size()) {
@@ -657,6 +697,28 @@ public:
 
     }
 
+    // Checking if command is BG
+    bool parseBg() {
+
+        command& lastCommand = c[c.size() - 1];
+
+        if (!lastCommand.argv.empty()) {
+            if (lastCommand.argv[lastCommand.argv.size() - 1] == "&") {
+                lastCommand.argv.pop_back();
+                return true;
+            }
+        }
+        else {
+            if (lastCommand.name[lastCommand.name.size() - 1] == '&') {
+                lastCommand.name.pop_back();
+                return true;
+            }
+        }
+
+        return false;
+
+    }
+
     // Destructor
     ~command_ext() {
         // Not needed
@@ -667,11 +729,62 @@ public:
 
 int main() {
 
+    const int threshold = 1000;
+    int i = 0;
 
-    while (true) {
+    int out[2];
+    pipe(out);
+
+    bool bgCommand = false;
+
+    while (i < threshold) {
+
         command_ext cmd;
         cin >> cmd;
-        cmd.execute();
+
+        if (cmd.parseBg()) {
+
+            cout << "Starting command execution in background" << endl;
+            bgCommand = true;
+
+            if (fork() == 0) {
+
+                close(out[0]);
+                dup2(out[1], 1);
+                cmd.execute();
+                close(out[1]);
+                return 0;
+
+            }
+
+        }
+        else {
+
+            if (bgCommand) {
+
+                bgCommand = false;
+
+
+                if (fork() == 0) {
+
+                    char consoleBuffer[1000] = {0};
+                    close(out[1]);
+                    read(out[0], consoleBuffer, 1000);
+                    close(out[0]);
+
+                    return 0;
+
+                }
+
+                wait(NULL);
+
+            }
+
+            cmd.execute();
+        }
+
+        i++;
+
     }
 
 
