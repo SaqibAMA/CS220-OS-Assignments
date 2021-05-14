@@ -744,7 +744,6 @@ int main() {
 
         if (cmd.parseBg()) {
 
-            cout << "Starting command execution in background" << endl;
             bgCommand = true;
 
             if (fork() == 0) {
