@@ -67,6 +67,40 @@ void generateMatrix(const char* filename, const int rows, const int cols) {
 
 }
 
+// Def: Finds rows and columns in the file.
+// Ret: The number of rows and columns.
+pair <int, int> getRowAndColumn (const char* filename) {
+
+
+  ifstream fin;
+  fin.open(filename);
+
+  pair <int, int> rAndC(0, 0);
+
+  char buffer[1000] = {0};
+  fin.getline(buffer, 1000);
+
+  for (char i : buffer) {
+  
+    rAndC.first += (i == ' ');
+    rAndC.first += (i == '\n');
+  
+  }
+
+  while (!fin.eof()) {
+
+    fin.getline(buffer, 1000);
+    rAndC.second++;
+
+  }
+
+
+  fin.close();
+
+  return rAndC;
+
+}
+
 // Def: Reads a file.
 // Ret: A matrix.
 MATRIX readFromFile (const char* filename) {
@@ -78,12 +112,10 @@ MATRIX readFromFile (const char* filename) {
 
   if (!fin) throw runtime_error("Could not open file!");
 
+  pair <int, int> rAndC = getRowAndColumn(filename);
 
-  int rows = 0;
-  int col = 0;
-
-  fin >> rows;
-  fin >> col;
+  int col = rAndC.first;
+  int rows = rAndC.second;
 
 
   MATRIX m(rows);
@@ -108,6 +140,7 @@ MATRIX readFromFile (const char* filename) {
 
 
 }
+
 
 // Def: Prints the matrix.
 // Ret: void.
@@ -262,7 +295,7 @@ int main(int argc, char* argv[]) {
   cout << "No of processors: " << P << endl;
 
   // Use this to print the product
-  // print(product);
+  print(product);
 
 
   // ---- NON-MULTITHREADED ----
