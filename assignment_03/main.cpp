@@ -226,21 +226,16 @@ void multiply(const MATRIX& m1, const MATRIX& m2) {
 
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 
-
-  // Generating random matrices
-  // filename, rows, cols
-  generateMatrix("m1.txt", 1000, 1000);
-  generateMatrix("m2.txt", 1000, 1000);
-
+  if (argc < 3) throw runtime_error("Not enough arguments!");
 
   // Creating a semaphore -- helpful when writing data
   sem_init(&mutex, 1, 1);
 
   // Reading matrix from the file.
-  MATRIX m1 = readFromFile("m1.txt");
-  MATRIX m2 = readFromFile("m2.txt");
+  MATRIX m1 = readFromFile(argv[1]);
+  MATRIX m2 = readFromFile(argv[2]);
 
   cout << "m1 order: " << m1.size() << "x" << m1[0].size() << endl;
   cout << "m2 order: " << m2.size() << "x" << m2[0].size() << endl;
