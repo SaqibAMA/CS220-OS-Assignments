@@ -20,9 +20,6 @@ auto P = thread::hardware_concurrency();
 // Creating mutex semaphore
 sem_t mutex;
 
-// Creating allowed threads semaphore
-sem_t threadsAllowed;
-
 
 // Stores the product of the matrix.
 MATRIX product;
@@ -198,9 +195,6 @@ void getRowProduct(const ROW& r1, const MATRIX& m2, const int rowNumber) {
 
   // -- End of critical section --
 
-  // Signaling the other threads that they can come now.
-  sem_post(&threadsAllowed);
-
 }
 
 // Core function
@@ -231,18 +225,11 @@ void multiply_mt(const MATRIX& m1, const MATRIX& m2) {
   while (rowsProcessed < m1.size()) {
 
     for (int i = 0; i < P && rowsProcessed < m1.size(); i++) {
-
       threadQueue.push_back(new thread(getRowProduct, m1[rowsProcessed], m2, rowsProcessed));
-      
-      // only allowed P number of threads to be started
-      sem_wait(&threadsAllowed);
-
       ++rowsProcessed;
-    
     }
   
   }
-
 
 }
 
@@ -278,7 +265,6 @@ int main(int argc, char* argv[]) {
 
   // Creating a semaphore -- helpful when writing data
   sem_init(&mutex, 1, 1);
-  sem_init(&threadsAllowed, 1, P);
 
   // Reading matrix from the file.
   MATRIX m1 = readFromFile(argv[1]);
@@ -327,7 +313,6 @@ int main(int argc, char* argv[]) {
   
 
   sem_destroy(&mutex);
-  sem_destroy(&threadsAllowed);
 
   return 0;
 
