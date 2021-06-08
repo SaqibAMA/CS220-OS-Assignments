@@ -11,14 +11,32 @@
 
 using namespace std;
 
+
+// Simple Logging Routine
+
+#define GREEN "\u001b[32m"
+#define RED "\u001b[31m"
+#define RESET "\u001b[0m"
+
+void LOG(const char* message, bool error_flag = false) {
+
+    if (error_flag)
+        cout << RED;
+    else
+        cout << GREEN;
+
+    cout << message;
+
+    cout << RESET << endl;
+
+}
+
 int main () {
 
-    cout << "(+) Starting client..." << endl;
+    LOG("(+) Starting client...");
 
     int socket_fd;
     struct sockaddr_in server_address;
-    
-    char* message = "Hello from client!";
     
     char read_buffer[READ_BUFFER_MAX_SIZE] = {0};
 
@@ -31,7 +49,7 @@ int main () {
         exit(EXIT_FAILURE);
     }
 
-    cout << "(+) Socket created..." << endl;
+    LOG("(+) Socket created...");
 
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(PORT);
@@ -44,7 +62,7 @@ int main () {
 
     }
 
-    cout << "(+) Address converted..." << endl;
+    LOG("(+) Address converted...");
 
     // Connecting to server
     if (connect(socket_fd, (struct sockaddr*) &server_address, sizeof(server_address)) < 0) {
@@ -54,7 +72,7 @@ int main () {
 
     }
 
-    cout << "(+) Server connected..." << endl;
+    LOG("(+) Server connected...");
 
 
     // Chat Interface
@@ -71,7 +89,8 @@ int main () {
 
         // Reading any messages
         int bytes_read = read(socket_fd, read_buffer, READ_BUFFER_MAX_SIZE);
-        cout << "Server: " << read_buffer << endl;
+        
+        cout << "[RESPONSE]" << read_buffer << endl;
 
     }
 
