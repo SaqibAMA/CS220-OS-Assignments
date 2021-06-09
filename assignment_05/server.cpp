@@ -35,90 +35,175 @@ void LOG(const char* message, bool error_flag = false) {
 
 }
 
+
 // DBMS
 class DBMS {
 
 public:
-    DBMS() {
-
-        write_dummy_data();
-    
-    }
-
-    void write_dummy_data() {
-
-        vector <string> dummyAuthors = {
-            "Jacob Simons",
-            "Alan Turing",
-            "John Doe",
-            "Theta Omega"
-        };
-
-        Record _dRec (
-            1,
-            "Introduction to Programming",
-            dummyAuthors,
-            "12/01/2001",
-            "Penguin"
-        );
-
-        Record _dRec2 (
-            7,
-            "Introduction to Programming",
-            dummyAuthors,
-            "12/01/2001",
-            "Penguin"
-        );
-
-        int fd = open("data.dat", O_RDWR | O_APPEND, 0);
-
-        lseek(fd, _dRec2.ID * sizeof(Record), SEEK_SET);
-
-        string output = _dRec2.title;
-
-        write(fd, output.c_str(), sizeof(Record));
-
-        close(fd);
-
-        cout << "File written" << endl;
-
-    }
-
-public:
 
     // Record Node
-    struct Record {
+    class Record {
         
-        unsigned int ID;
-        string title;
-        vector <string> authors;
-        string publish_date;
-        string publisher;
+        public:
 
-        Record(
-            unsigned int ID,
-            string title,
-            vector <string> authors,
-            string publish_date,
-            string publisher) {
+            unsigned int ID;
+            string title;
+            vector <string> authors;
+            string publish_date;
+            string publisher;
 
-                this->ID = ID;
-                this->title = title;
-                this->authors = authors;
-                this->publish_date = publish_date;
-                this->publisher = publisher;
+            Record() {
 
-        }
+                ID = 0;
+                title = "Dummy Title";
+                authors.push_back("Dummy Author 1");
+                authors.push_back("Dummy Author 2");
+                publish_date = "12/01/2001";
+                publisher = "Dummy Publisher";
+
+            }
+
+            Record(
+                unsigned int ID,
+                string title,
+                vector <string> authors,
+                string publish_date,
+                string publisher) {
+
+                    this->ID = ID;
+                    this->title = title;
+                    this->authors = authors;
+                    this->publish_date = publish_date;
+                    this->publisher = publisher;
+
+            }
 
     };
 
     vector <Record> index;
 
+    unsigned int total_records;
+
+public:
+
+    DBMS() {
+
+        total_records = 0;
+        LOG("(-) Database started...");
+
+    }
+
+    // Inserts record
+    bool insert_record(const Record& r) {
+
+        // Parsing record
+        string file_insertion = parse_record(r);
+
+
+        // Opening file
+        int fd = open("db.dat", O_RDWR , 0);
+
+        if (fd < 0) {
+
+            LOG("(!) Could not open database file...", true);
+            throw runtime_error("(!) Missing database file...");
+
+        }
+
+        
+        // Gets the current size of the file
+        struct stat buffer;
+        fstat(fd, &buffer);
+
+        // Mapping
+        // fd += lseek(fd, r.ID * sizeof(Record), SEEK_SET);
+
+        char* ptr = (char*) mmap(0, (r.ID * sizeof(Record)) + sizeof(Record), PROT_WRITE, MAP_SHARED, fd, 0);
+
+        for (int i = r.ID * sizeof(Record), j = 0; j < sizeof(Record); i++, j++) {
+            ptr[i] = file_insertion[j];
+        }
+
+
+        // Writing
+        // cout << write(fd, file_insertion.c_str(), sizeof(Record)) << " bytes written." << endl;
+
+        // Closing
+        close(fd);
+
+        // Validating
+        return true;
+
+    }
+
+
+    // Converts record into a file writable format
+    string parse_record(const Record& r) {
+
+        // Function output
+        string parsed_output = "";
+
+        // Parsed ID
+        parsed_output += to_string(r.ID);
+        parsed_output += ",";
+
+        // Parsed Title
+        parsed_output += r.title;
+        parsed_output += ",";
+
+        // Parse Authors
+        parsed_output += "(";
+        for (int i = 0; i < r.authors.size() - 1; i++) {
+            parsed_output += r.authors[i];
+            parsed_output += ",";
+        }
+        parsed_output += r.authors[r.authors.size() - 1];
+        parsed_output += "),";
+
+        // Parsed Publish Date
+        parsed_output += r.publish_date;
+        parsed_output += ",";
+
+        // Parsed Publisher
+        parsed_output += r.publisher;
+        parsed_output += '.';
+
+        return parsed_output;
+
+    }
+
+
+    ~DBMS() {
+        LOG("(-) Database closed...");
+    }
+
 };
 
 
-
 int main() {
+
+
+    DBMS db;
+
+    vector <string> authors = {
+        "Saqib Ali",
+        "Farhan Ali",
+        "Sajawal Ali",
+        "Shmoon Ali"
+    };
+
+    DBMS::Record r[3];
+
+    r[0].ID = 7;
+    r[1].ID = 21;
+    r[2].ID = 0;
+    
+    db.insert_record(r[0]);
+    db.insert_record(r[1]);
+    db.insert_record(r[2]);
+
+    return -1;
+
 
     LOG("(+) Starting server...");
 
@@ -186,8 +271,6 @@ int main() {
 
     LOG("(+) Accepted...");
 
-
-    DBMS db;
 
     while (1) {
     
