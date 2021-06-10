@@ -14,6 +14,8 @@
 #define PORT 8080
 #define READ_BUFFER_MAX_SIZE 1024
 
+#define MAX_MAP_SIZE 65536
+
 using namespace std;
 
 // Simple Logging Routine
@@ -80,15 +82,15 @@ public:
 
     };
 
+    
     vector <Record> index;
 
-    unsigned int total_records;
+
 
 public:
 
     DBMS() {
 
-        total_records = 0;
         LOG("(-) Database started...");
 
     }
@@ -101,7 +103,7 @@ public:
 
 
         // Opening file
-        int fd = open("db.dat", O_RDWR , 0);
+        int fd = open("db.dat", O_RDWR | O_CREAT , 0);
 
         if (fd < 0) {
 
@@ -110,26 +112,29 @@ public:
 
         }
 
-        
-        // Gets the current size of the file
-        struct stat buffer;
-        fstat(fd, &buffer);
+        // Extending size
+        ftruncate(fd, MAX_MAP_SIZE);
 
-        // Mapping
-        // fd += lseek(fd, r.ID * sizeof(Record), SEEK_SET);
+        // Memory Map
+        char* ptr = (char*) mmap(0, MAX_MAP_SIZE, PROT_WRITE, MAP_SHARED, fd, 0);
 
-        char* ptr = (char*) mmap(0, (r.ID * sizeof(Record)) + sizeof(Record), PROT_WRITE, MAP_SHARED, fd, 0);
+        // Writing into the file
+        {
 
-        for (int i = r.ID * sizeof(Record), j = 0; j < sizeof(Record); i++, j++) {
-            ptr[i] = file_insertion[j];
+            int i = r.ID * sizeof(Record);
+
+            for (char c : file_insertion) {
+                ptr[i] = c;
+                ++i;
+            }
+
         }
-
-
-        // Writing
-        // cout << write(fd, file_insertion.c_str(), sizeof(Record)) << " bytes written." << endl;
 
         // Closing
         close(fd);
+
+        // Logging
+        LOG("(!) Successfully inserted record...");
 
         // Validating
         return true;
