@@ -11,6 +11,8 @@
 
 #include <stdlib.h>
 
+#include <sstream>
+
 #define PORT 8080
 #define READ_BUFFER_MAX_SIZE 1024
 
@@ -141,6 +143,52 @@ public:
 
     }
 
+    // Gets record
+    bool get_record(unsigned int ID) {
+
+        // Opening file
+        int fd = open("db.dat", O_RDWR | O_CREAT , 0);
+
+        if (fd < 0) {
+
+            LOG("(!) Could not open database file...", true);
+            throw runtime_error("(!) Missing database file...");
+
+        }
+
+        // Extending size
+        ftruncate(fd, MAX_MAP_SIZE);
+
+        // Memory Map
+        char* ptr = (char*) mmap(0, MAX_MAP_SIZE, PROT_READ, MAP_SHARED, fd, 0);
+
+        // Record retrieval
+        string retrieved_record = "";
+
+        // Writing into the file
+        {
+
+            int i = ID * sizeof(Record);
+
+            for (int j = 0; j < sizeof(Record); j++) {
+                retrieved_record += ptr[i];
+                i++;
+            }
+
+        }
+
+        parse_string(retrieved_record);
+
+        // Closing
+        close(fd);
+
+        // Logging
+        LOG("(!) Successfully retrieved record...");
+
+        // Validating
+        return true;
+
+    }
 
     // Converts record into a file writable format
     string parse_record(const Record& r) {
@@ -177,6 +225,46 @@ public:
 
     }
 
+    Record parse_string(const string& s) {
+
+        vector <string> tokens;
+        string token;
+
+        // Tokenizing the string
+        for (unsigned int i = 0; i < s.length(); i++) {
+
+            if (s[i] == '(') {
+
+                i++;
+
+                while (s[i] != ')') {
+                    token += s[i];
+                    i++;
+                }
+
+            }
+            else if (s[i] == ',' || s[i] == '.') {
+                tokens.push_back(token);
+                token = "";
+            }
+            else {
+                token += s[i];
+            }
+
+        }
+
+
+        // Creating output record
+
+        // Record output;
+
+        // output.ID = stoi(token[0]);
+        // output.title = token[1];
+
+        // return output;
+
+    }
+
 
     ~DBMS() {
         LOG("(-) Database closed...");
@@ -206,6 +294,9 @@ int main() {
     db.insert_record(r[0]);
     db.insert_record(r[1]);
     db.insert_record(r[2]);
+
+
+    db.get_record(7);
 
     return -1;
 
