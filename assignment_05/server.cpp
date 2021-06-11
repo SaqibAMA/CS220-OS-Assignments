@@ -254,14 +254,26 @@ public:
         }
 
 
+        for (int i = 0; i < tokens.size(); i++) {
+            cout << i << "-> ";
+            cout << tokens[i] << endl;
+        }
+
         // Creating output record
 
-        // Record output;
+        Record output;
 
-        // output.ID = stoi(token[0]);
-        // output.title = token[1];
+        
+        output.ID = stoi(tokens[0]);
+        output.title = tokens[1];
 
-        // return output;
+        token = "";
+        
+
+        output.publish_date = tokens[3];
+        output.publisher = tokens[4];
+
+        return output;
 
     }
 
