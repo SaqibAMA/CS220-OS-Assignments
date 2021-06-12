@@ -31,6 +31,12 @@ void LOG(const char* message, bool error_flag = false) {
 
 }
 
+
+void clean_buffer(char* read_buffer) {
+    for (int i = 0; i < READ_BUFFER_MAX_SIZE; i++)
+        read_buffer[i] = 0;
+}
+
 int main () {
 
     LOG("(+) Starting client...");
@@ -81,16 +87,19 @@ int main () {
 
         // Taking user input
         string user_input;
+        char input_buffer[READ_BUFFER_MAX_SIZE];
         cout << ">> ";
-        cin >> user_input;
+        cin.getline(input_buffer, READ_BUFFER_MAX_SIZE);
+        user_input = input_buffer;
 
         // Sending message
         send(socket_fd, user_input.c_str(), user_input.length(), 0);
 
         // Reading any messages
         int bytes_read = read(socket_fd, read_buffer, READ_BUFFER_MAX_SIZE);
-        
-        cout << "[RESPONSE]" << read_buffer << endl;
+        cout << read_buffer << endl;
+
+        clean_buffer(read_buffer);
 
     }
 
