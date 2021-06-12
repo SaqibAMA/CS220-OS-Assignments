@@ -82,6 +82,20 @@ public:
 
             }
 
+            friend ostream& operator << (ostream& out, const Record& r) {
+                out << "[Record Details]\n\n";
+                out << "ID:        " << r.ID << endl;
+                out << "Title:     " << r.title << endl;
+                out << "Authors:   ";
+                for (auto author : r.authors)
+                    out << "(" << author << ") ";
+                out << endl;
+                out << "Published: " << r.publish_date << endl;
+                out << "Publisher: " << r.publisher << endl;
+
+                return out;
+            } 
+
     };
 
     
@@ -177,10 +191,21 @@ public:
 
         }
 
-        parse_string(retrieved_record);
+        bool stringIsNull = true;
+        for (char c : retrieved_record)
+            if (c != 0)
+                stringIsNull = false;
+
 
         // Closing
         close(fd);
+
+        if (stringIsNull) {
+            LOG("(!) Record could not be found!", true);
+            return false;
+        }
+
+        cout << parse_string(retrieved_record) << endl;
 
         // Logging
         LOG("(!) Successfully retrieved record...");
@@ -253,12 +278,6 @@ public:
 
         }
 
-
-        for (int i = 0; i < tokens.size(); i++) {
-            cout << i << "-> ";
-            cout << tokens[i] << endl;
-        }
-
         // Creating output record
 
         Record output;
@@ -266,9 +285,21 @@ public:
         
         output.ID = stoi(tokens[0]);
         output.title = tokens[1];
+        
 
         token = "";
-        
+        vector <string> author_tokens;
+        for (char c : tokens[2]) {
+            if (c == ',' || c == '\0') {
+                author_tokens.push_back(token);
+                token = "";
+            }
+            else {
+                token += c;
+            }
+        }
+
+        output.authors = author_tokens;
 
         output.publish_date = tokens[3];
         output.publisher = tokens[4];
@@ -308,7 +339,7 @@ int main() {
     db.insert_record(r[2]);
 
 
-    db.get_record(7);
+    db.get_record(8);
 
     return -1;
 
